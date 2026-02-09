@@ -13,4 +13,4 @@ env:
   - name: SCHEMA_NAME
     value: "gold"
   - name: DATABRICKS_WAREHOUSE_ID
-    value: ""
+    value: "4b28691c780d9875"
