@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   Base Layer - Global Resets & Defaults
+   ============================================ */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-stryker-background text-white font-sans;
+    overflow-x: hidden;
+  }
+
+  /* Selection color */
+  ::selection {
+    @apply bg-stryker-primary/40 text-white;
+  }
+}
+
+/* ============================================
+   Custom Scrollbar Styles
+   ============================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+/* ============================================
+   Component Layer - Reusable UI Classes
+   ============================================ */
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.05),
+      0 4px 24px -4px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300;
+  }
+
+  .glass-card-hover:hover {
+    @apply bg-white/[0.08] border-white/20;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 8px 32px -4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Glass card with accent border */
+  .glass-card-primary {
+    @apply glass-card border-l-2 border-l-stryker-primary;
+  }
+
+  .glass-card-accent {
+    @apply glass-card border-l-2 border-l-stryker-accent;
+  }
+
+  .glass-card-success {
+    @apply glass-card border-l-2 border-l-stryker-success;
+  }
+
+  .glass-card-danger {
+    @apply glass-card border-l-2 border-l-stryker-danger;
+  }
+
+  /* Animated gradient background overlay */
+  .animated-gradient-bg {
+    @apply fixed inset-0 pointer-events-none;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 20%, rgba(0, 87, 184, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 80%, rgba(255, 184, 28, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 50% at 50% 50%, rgba(16, 185, 129, 0.03) 0%, transparent 60%);
+    animation: gradient-shift 8s ease infinite;
+    background-size: 200% 200%;
+    z-index: 0;
+  }
+
+  /* Number/data font utility */
+  .font-data {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+
+  /* KPI value styling */
+  .kpi-value {
+    @apply font-mono text-2xl lg:text-3xl font-bold tabular-nums tracking-tight;
+  }
+
+  .kpi-label {
+    @apply text-xs text-white/50 font-medium uppercase tracking-wider;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold;
+  }
+
+  .badge-success {
+    @apply badge bg-stryker-success/20 text-stryker-success;
+  }
+
+  .badge-danger {
+    @apply badge bg-stryker-danger/20 text-stryker-danger;
+  }
+
+  .badge-warning {
+    @apply badge bg-stryker-accent/20 text-stryker-accent;
+  }
+
+  .badge-info {
+    @apply badge bg-stryker-primary/20 text-stryker-primary;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg bg-stryker-primary text-white font-medium text-sm
+           hover:bg-stryker-primary/90 active:bg-stryker-primary/80
+           transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 rounded-lg bg-white/10 text-white/80 font-medium text-sm
+           border border-white/10 hover:bg-white/15 hover:text-white
+           transition-all duration-200;
+  }
+
+  .btn-accent {
+    @apply px-4 py-2 rounded-lg bg-stryker-accent text-stryker-background font-semibold text-sm
+           hover:bg-stryker-accent/90 active:bg-stryker-accent/80
+           transition-all duration-200;
+  }
+
+  /* Input styles */
+  .input-glass {
+    @apply w-full px-3 py-2 rounded-lg text-sm text-white
+           bg-white/5 border border-white/10
+           placeholder:text-white/30
+           focus:outline-none focus:ring-2 focus:ring-stryker-primary/50 focus:border-stryker-primary/50
+           transition-all duration-200;
+  }
+
+  /* Table styles */
+  .table-glass {
+    @apply w-full text-sm text-left;
+  }
+
+  .table-glass thead {
+    @apply border-b border-white/10;
+  }
+
+  .table-glass th {
+    @apply px-4 py-3 text-[11px] font-semibold text-white/40 uppercase tracking-wider;
+  }
+
+  .table-glass td {
+    @apply px-4 py-3 text-white/80 border-b border-white/5;
+  }
+
+  .table-glass tr:hover td {
+    @apply bg-white/[0.03];
+  }
+}
+
+/* ============================================
+   Utility Layer - Additional Helpers
+   ============================================ */
+@layer utilities {
+  /* Text gradient */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-stryker-primary to-blue-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-stryker-accent to-yellow-300 bg-clip-text text-transparent;
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: 0 0 20px rgba(0, 87, 184, 0.3);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px rgba(255, 184, 28, 0.3);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .glow-danger {
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+  }
+
+  /* Hide scrollbar but keep scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
