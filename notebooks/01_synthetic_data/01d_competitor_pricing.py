@@ -611,7 +611,7 @@ display(
 # -----------------------------------------------------------------------
 # Ensure catalog and schema exist
 # -----------------------------------------------------------------------
-spark.sql(f"CREATE CATALOG IF NOT EXISTS {CATALOG}")
+spark.sql(f"USE CATALOG {CATALOG}")
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOG}.{SCHEMA}")
 
 # -----------------------------------------------------------------------
@@ -657,15 +657,8 @@ display(df_verify.orderBy("competitor", "product_category", "year", "quarter").l
 
 # COMMAND ----------
 
-spark.sql(f"""
-    COMMENT ON TABLE {FULL_TABLE} IS
-    'Synthetic competitor ASP and market intelligence data for Stryker pricing analysis. '
-    'Covers Zimmer Biomet, Medtronic, J&J DePuy Synthes, Globus Medical, and Smith+Nephew '
-    'across Hip/Knee Reconstruction, Trauma, Spine, Beds & Stretchers, Neurovascular, '
-    'Power Tools, and Endoscopy. Quarterly data from Q1 2023 through Q4 2025 (12 quarters). '
-    'Generated with random seed 42 for reproducibility. '
-    'Source notebook: 01d_competitor_pricing'
-""")
+_comment = "Synthetic competitor ASP and market intelligence data for Stryker pricing analysis. Covers Zimmer Biomet, Medtronic, J&J DePuy Synthes, Globus Medical, and Smith+Nephew across Hip/Knee Reconstruction, Trauma, Spine, Beds and Stretchers, Neurovascular, Power Tools, and Endoscopy. Quarterly data from Q1 2023 through Q4 2025 (12 quarters). Generated with random seed 42 for reproducibility. Source notebook: 01d_competitor_pricing"
+spark.sql(f"COMMENT ON TABLE {FULL_TABLE} IS '{_comment}'")
 
 spark.sql(f"ALTER TABLE {FULL_TABLE} SET TBLPROPERTIES ('quality' = 'bronze', 'source' = 'synthetic', 'seed' = '42', 'generator' = '01d_competitor_pricing')")
 

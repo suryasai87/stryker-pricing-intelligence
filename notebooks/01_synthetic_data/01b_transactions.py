@@ -11,7 +11,7 @@
 # MAGIC **Output:** `hls_amer_catalog.bronze.stryker_transactions` (Delta table, partitioned by year/month)
 # MAGIC
 # MAGIC **Dependencies:**
-# MAGIC - Product master table: `hls_amer_catalog.bronze.stryker_product_master`
+# MAGIC - Product master table: `hls_amer_catalog.bronze.stryker_products`
 # MAGIC - This notebook should be run **after** `01a_product_master.py`
 # MAGIC
 # MAGIC **Embedded Statistical Patterns:**
@@ -44,7 +44,7 @@ from pyspark.sql.window import Window
 # ---------------------------------------------------------------------------
 CATALOG = "hls_amer_catalog"
 SCHEMA = "bronze"
-PRODUCT_TABLE = f"{CATALOG}.{SCHEMA}.stryker_product_master"
+PRODUCT_TABLE = f"{CATALOG}.{SCHEMA}.stryker_products"
 OUTPUT_TABLE = f"{CATALOG}.{SCHEMA}.stryker_transactions"
 
 NUM_TRANSACTIONS = 500_000
@@ -394,7 +394,7 @@ def load_product_master(table_name: str) -> DataFrame:
     product_df = spark.table(table_name).select(
         "product_id",
         "category",
-        "list_price",
+        F.col("base_asp").alias("list_price"),
     )
 
     row_count = product_df.count()

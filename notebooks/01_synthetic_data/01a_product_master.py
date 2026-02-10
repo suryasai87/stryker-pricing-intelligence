@@ -902,12 +902,8 @@ print(f"Delta table written: {FULLY_QUALIFIED_TABLE}")
 # COMMAND ----------
 
 # --- 8a. Add table comment ---
-spark.sql(f"""
-    COMMENT ON TABLE {FULLY_QUALIFIED_TABLE} IS
-    'Synthetic Stryker product master with {EXPECTED_SKU_COUNT} SKUs across 5 segments. '
-    'Generated deterministically (seed=42) for pricing intelligence analytics. '
-    'Source notebook: 01a_product_master.py'
-""")
+_comment = f"Synthetic Stryker product master with {EXPECTED_SKU_COUNT} SKUs across 5 segments. Generated deterministically (seed=42) for pricing intelligence analytics. Source notebook: 01a_product_master.py"
+spark.sql(f"COMMENT ON TABLE {FULLY_QUALIFIED_TABLE} IS '{_comment}'")
 
 # --- 8b. Add column comments ---
 column_comments = {
