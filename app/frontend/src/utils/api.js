@@ -78,7 +78,7 @@ async function apiFetch(endpoint, options = {}) {
  * @returns {Promise<Array>} List of product objects
  */
 export async function fetchProducts() {
-  return apiFetch('/api/products');
+  return apiFetch('/api/v1/products');
 }
 
 /**
@@ -86,7 +86,7 @@ export async function fetchProducts() {
  * @returns {Promise<Object>} KPI data object
  */
 export async function fetchPortfolioKPIs() {
-  return apiFetch('/api/portfolio/kpis');
+  return apiFetch('/api/v1/portfolio-kpis');
 }
 
 // ============================================
@@ -102,7 +102,7 @@ export async function fetchPortfolioKPIs() {
  * @returns {Promise<Object>} Simulation results with revenue/margin/volume projections
  */
 export async function simulatePriceChange(request) {
-  return apiFetch('/api/simulate/price', {
+  return apiFetch('/api/v1/simulate-price-change', {
     method: 'POST',
     body: JSON.stringify(request),
   });
@@ -114,7 +114,7 @@ export async function simulatePriceChange(request) {
  * @returns {Promise<Object>} Batch simulation results
  */
 export async function submitBatchScenario(scenarios) {
-  return apiFetch('/api/simulate/batch', {
+  return apiFetch('/api/v1/batch-scenario', {
     method: 'POST',
     body: JSON.stringify({ scenarios }),
   });
@@ -130,8 +130,10 @@ export async function submitBatchScenario(scenarios) {
  * @returns {Promise<Object>} Waterfall data with list price -> net price steps
  */
 export async function fetchPriceWaterfall(productId) {
-  const params = productId ? `?product_id=${encodeURIComponent(productId)}` : '';
-  return apiFetch(`/api/waterfall${params}`);
+  if (productId) {
+    return apiFetch(`/api/v1/price-waterfall/${encodeURIComponent(productId)}`);
+  }
+  return apiFetch('/api/v1/price-waterfall/default');
 }
 
 // ============================================
@@ -144,8 +146,8 @@ export async function fetchPriceWaterfall(productId) {
  * @returns {Promise<Object>} Competitor pricing and market share data
  */
 export async function fetchCompetitiveLandscape(category) {
-  const params = category ? `?category=${encodeURIComponent(category)}` : '';
-  return apiFetch(`/api/competitive${params}`);
+  const cat = category ? encodeURIComponent(category) : 'all';
+  return apiFetch(`/api/v1/competitive-landscape/${cat}`);
 }
 
 // ============================================
@@ -157,7 +159,7 @@ export async function fetchCompetitiveLandscape(category) {
  * @returns {Promise<Object>} External factors data (inflation, FX rates, supply chain, etc.)
  */
 export async function fetchExternalFactors() {
-  return apiFetch('/api/external-factors');
+  return apiFetch('/api/v1/external-factors');
 }
 
 // ============================================
@@ -169,7 +171,7 @@ export async function fetchExternalFactors() {
  * @returns {Promise<Object>} Health status
  */
 export async function healthCheck() {
-  return apiFetch('/api/health');
+  return apiFetch('/health');
 }
 
 export default {

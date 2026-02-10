@@ -4,7 +4,7 @@
 # MAGIC # 03c - Margin Optimization: ElasticNet with Interaction Effects
 # MAGIC
 # MAGIC **Purpose:** Train an ElasticNet regression model to predict absolute gross margin
-# MAGIC delta per unit (`gross_margin_delta`) given pricing, cost, and market features.
+# MAGIC delta per unit (`margin_pct_avg`) given pricing, cost, and market features.
 # MAGIC The pipeline uses polynomial feature expansion to capture critical interaction
 # MAGIC effects (e.g., tariff x volume, FX x COGS) that drive margin compression or
 # MAGIC expansion in medical device pricing.
@@ -99,32 +99,32 @@ print(f"Model registry    : {MODEL_REGISTRY_NAME}")
 # ---------------------------------------------------------------------------
 # Target variable
 # ---------------------------------------------------------------------------
-TARGET_COL = "gross_margin_delta"
+TARGET_COL = "margin_pct_avg"
 
 # ---------------------------------------------------------------------------
 # Numeric features
 # ---------------------------------------------------------------------------
 NUMERIC_FEATURES: List[str] = [
-    "predicted_revenue_impact",     # Output from upstream revenue model (03a)
-    "cogs_pct",                     # Cost of goods sold as % of revenue
-    "cogs_trend_3mo",               # 3-month rolling COGS trend
-    "tariff_impact_index",          # Composite tariff impact score
-    "fx_impact",                    # Weighted FX impact (USD/EUR, USD/JPY)
-    "logistics_cost_index",         # Composite: fuel + freight indices
-    "predicted_volume_change",      # Predicted unit volume delta (from 03b)
-    "discount_depth_change",        # Change in average discount depth (pp)
-    "rebate_pct_change",            # Change in rebate percentage (pp)
-    "product_mix_shift_index",      # Index capturing mix shift toward/away from premium
-    "resin_price_trend",            # Resin commodity price trend (3-mo slope)
-    "cobalt_chrome_price_trend",    # CoCr commodity price trend (3-mo slope)
-    "innovation_tier",              # Numeric tier: 1 (legacy) to 5 (breakthrough)
+    "price_delta_pct",
+    "avg_pocket_price",
+    "avg_list_price",
+    "discount_depth_avg",
+    "price_realization_avg",
+    "tariff_impact_index",
+    "macro_pressure_score",
+    "supply_chain_pressure_index",
+    "fuel_index",
+    "steel_tariff_pct",
+    "titanium_tariff_pct",
+    "innovation_tier",
+    "gpo_concentration",
 ]
 
 # ---------------------------------------------------------------------------
 # Categorical features
 # ---------------------------------------------------------------------------
 CATEGORICAL_FEATURES: List[str] = [
-    "category",                     # Product category (e.g., Joint Replacement, Spine, etc.)
+    "product_category",
 ]
 
 ALL_FEATURES: List[str] = NUMERIC_FEATURES + CATEGORICAL_FEATURES
@@ -359,7 +359,7 @@ def build_pipeline(
         steps=[
             ("onehot", OneHotEncoder(
                 handle_unknown="ignore",
-                sparse_output=False,
+                sparse=False,
                 drop="if_binary",
             )),
         ]
@@ -849,16 +849,14 @@ def run_sanity_checks(
         Dictionary mapping feature name to a dict with 'expected_direction',
         'actual_direction', 'delta', and 'passed' keys.
     """
-    # Expected directional relationships with gross_margin_delta
+    # Expected directional relationships with margin_pct_avg
     expected_directions = {
-        "predicted_revenue_impact": "positive",    # Higher revenue -> higher margin
-        "cogs_pct": "negative",                    # Higher COGS % -> lower margin
-        "cogs_trend_3mo": "negative",              # Rising COGS trend -> lower margin
+        "price_realization_avg": "positive",       # Higher price realization -> higher margin
+        "avg_pocket_price": "positive",            # Higher price -> higher margin
         "tariff_impact_index": "negative",         # Higher tariffs -> lower margin
-        "logistics_cost_index": "negative",        # Higher logistics costs -> lower margin
-        "predicted_volume_change": "positive",     # More volume -> scale efficiencies
-        "discount_depth_change": "negative",       # Deeper discounts -> lower margin
-        "rebate_pct_change": "negative",           # Higher rebates -> lower margin
+        "supply_chain_pressure_index": "negative", # Higher pressure -> lower margin
+        "discount_depth_avg": "negative",          # Deeper discounts -> lower margin
+        "fuel_index": "negative",                  # Higher fuel costs -> lower margin
         "innovation_tier": "positive",             # Higher innovation -> pricing power
     }
 
@@ -1061,7 +1059,7 @@ def log_and_register_model(
         sample_pred = best_model.predict(sample_X)
         signature = infer_signature(sample_X, sample_pred)
 
-        mlflow.sklearn.log_model(
+        model_info = mlflow.sklearn.log_model(
             sk_model=best_model,
             artifact_path="model",
             signature=signature,
@@ -1073,7 +1071,19 @@ def log_and_register_model(
             ],
         )
 
-        print(f"\nModel registered as: {model_registry_name}")
+        # Set alias for Unity Catalog model versioning
+        from mlflow import MlflowClient
+        uc_client = MlflowClient(registry_uri="databricks-uc")
+        # Get the version that was just registered
+        model_version = model_info.registered_model_version
+        uc_client.set_registered_model_alias(
+            name=model_registry_name,
+            alias="champion",
+            version=model_version,
+        )
+
+        print(f"\nModel registered as: {model_registry_name} v{model_version}")
+        print(f"Alias 'champion' set to v{model_version}")
         print(f"Artifacts logged to run: {run_id}")
 
         # -----------------------------------------------------------------
@@ -1137,8 +1147,8 @@ def verify_registered_model(
     """
     print("Verifying registered model...")
 
-    # Load the latest version from the registry
-    model_uri = f"models:/{model_registry_name}/latest"
+    # Load the champion alias from the Unity Catalog registry
+    model_uri = f"models:/{model_registry_name}@champion"
     loaded_model = mlflow.sklearn.load_model(model_uri)
 
     # Score a sample

@@ -21,7 +21,7 @@ const CATEGORIES = [
  * Props:
  *   apiEndpoint - string, base API endpoint (default: '/api/competitive')
  */
-export default function CompetitivePage({ apiEndpoint = '/api/competitive' }) {
+export default function CompetitivePage({ apiEndpoint = '/api/v1/competitive-landscape' }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [aspData, setAspData] = useState(null);
   const [shareData, setShareData] = useState(null);
@@ -35,8 +35,8 @@ export default function CompetitivePage({ apiEndpoint = '/api/competitive' }) {
       setError(null);
       try {
         const url = category && category !== 'all'
-          ? `${apiEndpoint}?category=${category}`
-          : apiEndpoint;
+          ? `${apiEndpoint}/${category}`
+          : `${apiEndpoint}/all`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch competitive data');
         const data = await res.json();

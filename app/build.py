@@ -29,7 +29,7 @@ from typing import List
 SCRIPT_DIR = Path(__file__).resolve().parent
 FRONTEND_DIR = SCRIPT_DIR / "frontend"
 FRONTEND_DIST_DIR = FRONTEND_DIR / "dist"
-BACKEND_STATIC_DIR = SCRIPT_DIR / "backend" / "static"
+BACKEND_STATIC_DIR = SCRIPT_DIR / "static"
 
 # Files that must exist in the build output for the app to work
 REQUIRED_BUILD_FILES = [

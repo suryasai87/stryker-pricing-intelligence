@@ -12,7 +12,7 @@ const springTransition = { type: 'spring', stiffness: 300, damping: 30 };
  *   onSelect       - function(product), called when a product is selected
  *   apiEndpoint    - string, the API endpoint to fetch products (default: '/api/products')
  */
-export default function ProductSelector({ selectedProduct = null, onSelect, apiEndpoint = '/api/products' }) {
+export default function ProductSelector({ selectedProduct = null, onSelect, apiEndpoint = '/api/v1/products' }) {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);

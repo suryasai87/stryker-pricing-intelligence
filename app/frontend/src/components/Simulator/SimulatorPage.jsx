@@ -13,7 +13,7 @@ const springTransition = { type: 'spring', stiffness: 300, damping: 30 };
 /**
  * useModelPrediction - Custom hook for fetching ML predictions.
  */
-function useModelPrediction(apiEndpoint = '/api/simulator/predict') {
+function useModelPrediction(apiEndpoint = '/api/v1/simulate-price-change') {
   const [predictions, setPredictions] = useState(null);
   const [sensitivityData, setSensitivityData] = useState(null);
   const [confidenceData, setConfidenceData] = useState(null);

@@ -82,18 +82,20 @@ TARGET_COL: str = "volume_delta_pct"
 PRIMARY_FEATURE: str = "price_delta_pct"
 
 CATEGORICAL_FEATURES: list[str] = [
-    "category",
-    "sub_category",
+    "product_category",
 ]
 
 NUMERIC_FEATURES: list[str] = [
     "price_delta_pct",
-    "seasonal_index",
+    "avg_pocket_price",
+    "avg_list_price",
+    "discount_depth_avg",
+    "price_realization_avg",
+    "seasonal_index_avg",
     "competitor_asp_gap",
-    "contract_tier_mix",
+    "contract_mix_score",
     "macro_pressure_score",
     "innovation_tier",
-    "switching_cost_index",
     "market_share_pct",
     "patent_years_remaining",
     "gpo_concentration",
@@ -128,8 +130,7 @@ print(f"MLflow experiment: {EXPERIMENT_PATH}")
 def load_feature_table(table_name: str) -> pd.DataFrame:
     """Read a Unity Catalog feature table into a Pandas DataFrame.
 
-    Uses the Databricks FeatureEngineeringClient to read the specified
-    table and converts the result to a Pandas DataFrame for local
+    Reads the specified table via Spark and converts to Pandas for local
     processing.
 
     Parameters
@@ -143,8 +144,9 @@ def load_feature_table(table_name: str) -> pd.DataFrame:
     pd.DataFrame
         The feature table as a Pandas DataFrame.
     """
-    fe_client = FeatureEngineeringClient()
-    feature_df = fe_client.read_table(name=table_name)
+    from pyspark.sql import SparkSession
+    spark = SparkSession.builder.getOrCreate()
+    feature_df = spark.read.table(table_name)
     return feature_df.toPandas()
 
 
@@ -183,7 +185,7 @@ def build_preprocessor(
     """
     cat_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+        ("onehot", OneHotEncoder(handle_unknown="ignore", sparse=False)),
     ])
     num_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
@@ -716,14 +718,14 @@ def generate_elasticity_curves(
     os.makedirs(artifact_dir, exist_ok=True)
 
     all_features = categorical_features + numeric_features
-    categories = df["category"].dropna().unique()
+    categories = df["product_category"].dropna().unique()
     curve_records: list[dict] = []
 
     # -- Combined plot --
     fig_all, ax_all = plt.subplots(figsize=(14, 8))
 
     for cat in sorted(categories):
-        cat_df = df[df["category"] == cat].copy()
+        cat_df = df[df["product_category"] == cat].copy()
         if len(cat_df) < 10:
             continue
 

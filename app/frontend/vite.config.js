@@ -10,10 +10,15 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/health': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
   build: {
-    outDir: '../static',
+    outDir: 'dist',
     emptyOutDir: true,
     sourcemap: false,
   },

@@ -12,7 +12,7 @@ const springTransition = { type: 'spring', stiffness: 300, damping: 30 };
  * Props:
  *   apiEndpoint - string, base API endpoint (default: '/api/external-factors')
  */
-export default function ExternalFactorsPage({ apiEndpoint = '/api/external-factors' }) {
+export default function ExternalFactorsPage({ apiEndpoint = '/api/v1/external-factors' }) {
   const [externalData, setExternalData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);

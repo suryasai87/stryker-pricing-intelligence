@@ -17,7 +17,7 @@
 # MAGIC 1. Initialize the Feature Engineering client
 # MAGIC 2. Read and validate gold pricing features
 # MAGIC 3. Register as a Feature Store table with composite primary keys and timestamp key
-# MAGIC 4. Define and document six feature groups (Price, Volume, Competitive, Financial, External, Customer)
+# MAGIC 4. Define and document six feature groups (Price, Volume, Competitive, Contract, Product, External)
 # MAGIC 5. Create feature lookups for point-in-time correct training data assembly
 # MAGIC 6. Validate feature distributions (nulls, outliers, drift detection)
 # MAGIC 7. Log feature metadata and statistics to MLflow
@@ -75,8 +75,8 @@ SOURCE_TABLE = f"{CATALOG}.{GOLD_SCHEMA}.pricing_features"
 FEATURE_TABLE = f"{CATALOG}.{FEATURE_SCHEMA}.pricing_features_fs"
 
 # -- Feature Store registration keys --
-PRIMARY_KEYS = ["product_id", "month"]
-TIMESTAMP_KEY = "month"
+PRIMARY_KEYS = ["product_id", "year_month"]
+TIMESTAMP_KEY = "year_month"
 
 # -- Validation thresholds --
 NULL_THRESHOLD_PCT = 5.0        # Max allowable null percentage per feature
@@ -101,38 +101,44 @@ FEATURE_GROUPS: Dict[str, Dict[str, Any]] = {
     "price": {
         "description": (
             "Price-related features capturing current pricing levels, "
-            "rate of change, and positioning relative to contractual bounds."
+            "rate of change, and positioning relative to discounts."
         ),
         "features": {
-            "current_asp": {
-                "description": "Current average selling price for the product in the period",
+            "avg_pocket_price": {
+                "description": "Average pocket (realized) price for the product in the period",
+                "dtype": "double",
+                "valid_range": (0.0, 1_000_000.0),
+                "unit": "USD",
+            },
+            "avg_list_price": {
+                "description": "Average list price for the product in the period",
                 "dtype": "double",
                 "valid_range": (0.0, 1_000_000.0),
                 "unit": "USD",
             },
             "price_delta_pct": {
-                "description": "Period-over-period percentage change in ASP",
+                "description": "Month-over-month percentage change in average pocket price",
                 "dtype": "double",
                 "valid_range": (-100.0, 500.0),
                 "unit": "percent",
             },
-            "price_vs_floor": {
-                "description": "Ratio of current ASP to contractual price floor (>1 means above floor)",
+            "discount_depth_avg": {
+                "description": "Average discount depth as fraction of list price",
                 "dtype": "double",
-                "valid_range": (0.0, 10.0),
+                "valid_range": (0.0, 1.0),
                 "unit": "ratio",
             },
-            "price_vs_ceiling": {
-                "description": "Ratio of current ASP to contractual price ceiling (<1 means below ceiling)",
+            "price_realization_avg": {
+                "description": "Average fraction of list price actually realized (pocket/list)",
                 "dtype": "double",
-                "valid_range": (0.0, 10.0),
+                "valid_range": (0.0, 2.0),
                 "unit": "ratio",
             },
-            "price_realization_pct": {
-                "description": "Percentage of list price actually realized after discounts and rebates",
+            "margin_pct_avg": {
+                "description": "Average unit-economics margin percentage",
                 "dtype": "double",
-                "valid_range": (0.0, 150.0),
-                "unit": "percent",
+                "valid_range": (-1.0, 1.0),
+                "unit": "ratio",
             },
         },
     },
@@ -142,99 +148,99 @@ FEATURE_GROUPS: Dict[str, Dict[str, Any]] = {
             "and seasonality patterns."
         ),
         "features": {
-            "units_3mo_avg": {
+            "total_units_sold": {
+                "description": "Total units sold in the product-month period",
+                "dtype": "double",
+                "valid_range": (0.0, 10_000_000.0),
+                "unit": "units",
+            },
+            "volume_delta_pct": {
+                "description": "Month-over-month percentage change in unit volume",
+                "dtype": "double",
+                "valid_range": (-100.0, 1000.0),
+                "unit": "percent",
+            },
+            "rolling_3mo_volume_avg": {
                 "description": "Rolling 3-month average unit volume",
                 "dtype": "double",
                 "valid_range": (0.0, 10_000_000.0),
                 "unit": "units",
             },
-            "units_yoy_change": {
-                "description": "Year-over-year percentage change in unit volume",
-                "dtype": "double",
-                "valid_range": (-100.0, 1000.0),
-                "unit": "percent",
-            },
-            "seasonal_index": {
+            "seasonal_index_avg": {
                 "description": "Seasonal adjustment index (1.0 = no seasonal effect)",
                 "dtype": "double",
                 "valid_range": (0.0, 5.0),
                 "unit": "index",
             },
-            "volume_trend_3mo": {
-                "description": "3-month linear trend coefficient for volume (positive = growing)",
+            "yoy_price_change_avg": {
+                "description": "Average year-over-year price change percentage",
                 "dtype": "double",
-                "valid_range": (-1.0, 1.0),
-                "unit": "coefficient",
+                "valid_range": (-100.0, 500.0),
+                "unit": "percent",
             },
         },
     },
     "competitive": {
         "description": (
-            "Competitive landscape features capturing relative positioning, "
-            "market dynamics, and switching economics."
+            "Competitive landscape features capturing relative positioning "
+            "and market dynamics."
         ),
         "features": {
             "competitor_asp_gap": {
-                "description": "Percentage gap between our ASP and the nearest competitor ASP",
+                "description": "Percentage gap between Stryker ASP and competitor average ASP",
                 "dtype": "double",
                 "valid_range": (-100.0, 200.0),
                 "unit": "percent",
             },
-            "market_share_trend": {
-                "description": "Trailing 3-month trend in market share (positive = gaining share)",
-                "dtype": "double",
-                "valid_range": (-1.0, 1.0),
-                "unit": "coefficient",
-            },
-            "innovation_gap": {
-                "description": "Product innovation score relative to competitive set (0=lagging, 1=leading)",
+            "market_share_pct": {
+                "description": "Stryker unit market share within category-month",
                 "dtype": "double",
                 "valid_range": (0.0, 1.0),
-                "unit": "score",
-            },
-            "switching_cost_index": {
-                "description": "Estimated switching cost index for customers (higher = stickier)",
-                "dtype": "double",
-                "valid_range": (0.0, 10.0),
-                "unit": "index",
+                "unit": "ratio",
             },
         },
     },
-    "financial": {
+    "contract": {
         "description": (
-            "Financial and margin features capturing cost structure, "
-            "discount exposure, and profitability metrics."
+            "Contract and channel mix features influencing pricing flexibility."
         ),
         "features": {
-            "cogs_pct": {
-                "description": "Cost of goods sold as a percentage of revenue",
+            "contract_mix_score": {
+                "description": "Proportion of volume under contract vs spot",
                 "dtype": "double",
-                "valid_range": (0.0, 100.0),
-                "unit": "percent",
+                "valid_range": (0.0, 1.0),
+                "unit": "ratio",
             },
-            "gross_margin_pct": {
-                "description": "Gross margin percentage (revenue minus COGS divided by revenue)",
+            "gpo_concentration": {
+                "description": "GPO concentration HHI (0=diverse, 1=concentrated)",
                 "dtype": "double",
-                "valid_range": (-50.0, 100.0),
-                "unit": "percent",
+                "valid_range": (0.0, 1.0),
+                "unit": "index",
             },
-            "discount_depth": {
-                "description": "Average discount depth as percentage off list price",
+            "customer_segment_mix": {
+                "description": "Share of volume from dominant customer segment",
                 "dtype": "double",
-                "valid_range": (0.0, 100.0),
-                "unit": "percent",
+                "valid_range": (0.0, 1.0),
+                "unit": "ratio",
             },
-            "rebate_exposure": {
-                "description": "Total rebate obligation as percentage of revenue",
-                "dtype": "double",
-                "valid_range": (0.0, 50.0),
-                "unit": "percent",
+        },
+    },
+    "product": {
+        "description": (
+            "Product attribute features capturing innovation level and patent status."
+        ),
+        "features": {
+            "innovation_tier": {
+                "description": "Product innovation tier (1=legacy, 5=breakthrough)",
+                "dtype": "integer",
+                "valid_range": (1, 5),
+                "unit": "tier",
             },
-            "freight_pct": {
-                "description": "Freight and logistics cost as a percentage of revenue",
-                "dtype": "double",
-                "valid_range": (0.0, 30.0),
-                "unit": "percent",
+            "patent_years_remaining": {
+                "description": "Years remaining on core patent protection",
+                "dtype": "integer",
+                "valid_range": (0, 25),
+                "unit": "years",
             },
         },
     },
@@ -244,64 +250,44 @@ FEATURE_GROUPS: Dict[str, Dict[str, Any]] = {
             "pricing strategy and cost structure."
         ),
         "features": {
-            "tariff_impact": {
-                "description": "Estimated tariff impact as percentage of COGS",
+            "tariff_impact_index": {
+                "description": "Weighted composite tariff impact (steel + titanium)",
                 "dtype": "double",
-                "valid_range": (0.0, 50.0),
+                "valid_range": (0.0, 100.0),
                 "unit": "percent",
             },
-            "cpi_medical_trend": {
-                "description": "Medical CPI trend (annualized rate of change)",
+            "macro_pressure_score": {
+                "description": "Normalized composite macro pressure (CPI + supply chain + fuel)",
                 "dtype": "double",
-                "valid_range": (-5.0, 20.0),
+                "valid_range": (0.0, 1.0),
+                "unit": "score",
+            },
+            "cpi_medical": {
+                "description": "Medical CPI index value",
+                "dtype": "double",
+                "valid_range": (50.0, 500.0),
+                "unit": "index",
+            },
+            "supply_chain_pressure_index": {
+                "description": "Supply chain pressure index",
+                "dtype": "double",
+                "valid_range": (0.0, 100.0),
+                "unit": "index",
+            },
+            "fuel_index": {
+                "description": "Fuel cost index affecting logistics",
+                "dtype": "double",
+                "valid_range": (0.0, 500.0),
+                "unit": "index",
+            },
+            "steel_tariff_pct": {
+                "description": "Steel tariff rate as percentage",
+                "dtype": "double",
+                "valid_range": (0.0, 100.0),
                 "unit": "percent",
             },
-            "supply_chain_pressure": {
-                "description": "Supply chain pressure index (0=no pressure, 1=severe disruption)",
-                "dtype": "double",
-                "valid_range": (0.0, 1.0),
-                "unit": "index",
-            },
-            "fx_impact": {
-                "description": "Foreign exchange impact on revenue as a percentage",
-                "dtype": "double",
-                "valid_range": (-20.0, 20.0),
-                "unit": "percent",
-            },
-            "hospital_capex_trend": {
-                "description": "Hospital capital expenditure trend index (>1 = expanding)",
-                "dtype": "double",
-                "valid_range": (0.5, 2.0),
-                "unit": "index",
-            },
-        },
-    },
-    "customer": {
-        "description": (
-            "Customer concentration, channel mix, and contract structure features "
-            "influencing pricing flexibility and risk."
-        ),
-        "features": {
-            "gpo_concentration": {
-                "description": "Revenue concentration through GPO contracts (0-1 scale)",
-                "dtype": "double",
-                "valid_range": (0.0, 1.0),
-                "unit": "ratio",
-            },
-            "contract_tier_mix": {
-                "description": "Weighted average contract tier (1=lowest tier, 5=highest tier)",
-                "dtype": "double",
-                "valid_range": (1.0, 5.0),
-                "unit": "tier",
-            },
-            "customer_segment_distribution": {
-                "description": "Herfindahl index of customer segment concentration (0=diverse, 1=concentrated)",
-                "dtype": "double",
-                "valid_range": (0.0, 1.0),
-                "unit": "index",
-            },
-            "direct_channel_pct": {
-                "description": "Percentage of revenue from direct sales channel vs. distribution",
+            "titanium_tariff_pct": {
+                "description": "Titanium tariff rate as percentage",
                 "dtype": "double",
                 "valid_range": (0.0, 100.0),
                 "unit": "percent",
@@ -392,6 +378,12 @@ def read_gold_features(
 # COMMAND ----------
 
 gold_df = read_gold_features(SOURCE_TABLE)
+
+# Cast year_month from STRING to DATE for Feature Store timestamp key compatibility
+# Feature Store requires TIMESTAMP or DATE type for timestamp keys
+gold_df = gold_df.withColumn("year_month", F.to_date(F.concat(F.col("year_month"), F.lit("-01")), "yyyy-MM-dd"))
+logger.info("Cast year_month column from STRING to DATE type.")
+
 display(gold_df.limit(20))
 
 # COMMAND ----------
@@ -443,28 +435,24 @@ def register_feature_table(
     table_exists = spark.catalog.tableExists(feature_table_name)
 
     if table_exists:
-        logger.info("Feature table '%s' already exists. Performing upsert.", feature_table_name)
-        fe_client.write_table(
-            name=feature_table_name,
-            df=df,
-            mode="merge",
-        )
-        logger.info("Upserted %d rows into existing feature table.", df.count())
-    else:
-        logger.info("Creating new feature table: %s", feature_table_name)
-        fe_client.create_table(
-            name=feature_table_name,
-            primary_keys=primary_keys,
-            timestamp_keys=[timestamp_key] if timestamp_key else None,
-            df=df,
-            description=description or "Stryker Pricing Intelligence - Gold Pricing Features",
-        )
-        logger.info(
-            "Created feature table '%s' with primary_keys=%s, timestamp_key=%s.",
-            feature_table_name,
-            primary_keys,
-            timestamp_key,
-        )
+        logger.info("Feature table '%s' already exists. Dropping to recreate with PK constraints.", feature_table_name)
+        spark.sql(f"DROP TABLE IF EXISTS {feature_table_name}")
+        logger.info("Dropped existing table.")
+
+    logger.info("Creating feature table: %s", feature_table_name)
+    fe_client.create_table(
+        name=feature_table_name,
+        primary_keys=primary_keys,
+        timestamp_keys=[timestamp_key] if timestamp_key else None,
+        df=df,
+        description=description or "Stryker Pricing Intelligence - Gold Pricing Features",
+    )
+    logger.info(
+        "Created feature table '%s' with primary_keys=%s, timestamp_key=%s.",
+        feature_table_name,
+        primary_keys,
+        timestamp_key,
+    )
 
 # COMMAND ----------
 
@@ -479,9 +467,9 @@ register_feature_table(
     primary_keys=PRIMARY_KEYS,
     timestamp_key=TIMESTAMP_KEY,
     description=(
-        "Production feature table for Stryker pricing intelligence. Contains 27 features "
-        "across 6 groups (price, volume, competitive, financial, external, customer). "
-        "Primary keys: product_id + month. Timestamp key: month for point-in-time lookups."
+        "Production feature table for Stryker pricing intelligence. Contains 25 features "
+        "across 6 groups (price, volume, competitive, contract, product, external). "
+        "Primary keys: product_id + year_month. Timestamp key: year_month for point-in-time lookups."
     ),
 )
 
@@ -656,8 +644,8 @@ def create_training_set(
 feature_lookups = build_feature_lookups(
     feature_table_name=FEATURE_TABLE,
     feature_groups=FEATURE_GROUPS,
-    lookup_key=["product_id", "month"],
-    timestamp_lookup_key="month",
+    lookup_key=["product_id", "year_month"],
+    timestamp_lookup_key="year_month",
 )
 
 # Display the lookups for verification
@@ -864,7 +852,7 @@ def compute_psi(
     cur_count = current.count()
 
     ref_vals = np.array(
-        reference.select(feat_name)
+        reference.select(feature_name)
         .filter(F.col(feature_name).isNotNull())
         .sample(fraction=min(1.0, MAX_SAMPLE / max(ref_count, 1)))
         .toPandas()[feature_name]
@@ -903,7 +891,7 @@ def compute_psi(
 def validate_drift(
     df: DataFrame,
     feature_names: List[str],
-    timestamp_col: str = "month",
+    timestamp_col: str = "year_month",
     psi_threshold: float = 0.2,
     reference_months: int = 6,
 ) -> Dict[str, Dict[str, Any]]:
@@ -930,8 +918,16 @@ def validate_drift(
         logger.warning("No valid dates found. Skipping drift validation.")
         return {}
 
-    # Use the last `reference_months` months before the most recent data as reference
-    split_date = max_date - timedelta(days=reference_months * 30)
+    # Handle string-type timestamp columns (e.g., "2025-01" year_month format)
+    if isinstance(max_date, str):
+        try:
+            max_date_dt = datetime.strptime(max_date[:7], "%Y-%m")
+        except ValueError:
+            max_date_dt = datetime.strptime(max_date[:10], "%Y-%m-%d")
+        split_date_dt = max_date_dt - timedelta(days=reference_months * 30)
+        split_date = split_date_dt.strftime("%Y-%m")
+    else:
+        split_date = max_date - timedelta(days=reference_months * 30)
 
     reference_df = df.filter(F.col(timestamp_col) < split_date)
     current_df = df.filter(F.col(timestamp_col) >= split_date)
@@ -1225,8 +1221,8 @@ print(f"Experiment: {MLFLOW_EXPERIMENT}")
 # MAGIC |------|-------------|--------|
 # MAGIC | 1 | Initialized Feature Engineering Client | Done |
 # MAGIC | 2 | Read gold pricing features from `hls_amer_catalog.gold.pricing_features` | Done |
-# MAGIC | 3 | Registered Feature Store table with PK=`(product_id, month)` and timestamp key=`month` | Done |
-# MAGIC | 4 | Documented 6 feature groups (27 features) with column comments and table tags | Done |
+# MAGIC | 3 | Registered Feature Store table with PK=`(product_id, year_month)` and timestamp key=`year_month` | Done |
+# MAGIC | 4 | Documented 6 feature groups (25 features) with column comments and table tags | Done |
 # MAGIC | 5 | Created FeatureLookups for point-in-time correct training data assembly | Done |
 # MAGIC | 6 | Validated feature distributions (nulls, outliers, drift) | Done |
 # MAGIC | 7 | Logged all metadata and validation results to MLflow | Done |

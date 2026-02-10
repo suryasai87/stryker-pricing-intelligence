@@ -12,7 +12,7 @@ const springTransition = { type: 'spring', stiffness: 300, damping: 30 };
  * Props:
  *   apiEndpoint - string, base API endpoint (default: '/api/waterfall')
  */
-export default function WaterfallPage({ apiEndpoint = '/api/waterfall' }) {
+export default function WaterfallPage({ apiEndpoint = '/api/v1/price-waterfall' }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [waterfallData, setWaterfallData] = useState(null);
   const [marginData, setMarginData] = useState(null);
@@ -25,7 +25,7 @@ export default function WaterfallPage({ apiEndpoint = '/api/waterfall' }) {
       setError(null);
       try {
         const url = productId
-          ? `${apiEndpoint}?product_id=${productId}`
+          ? `${apiEndpoint}/${productId}`
           : apiEndpoint;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch waterfall data');

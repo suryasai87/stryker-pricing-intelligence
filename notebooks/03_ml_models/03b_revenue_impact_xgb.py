@@ -4,7 +4,7 @@
 # MAGIC # 03b - Revenue Impact Prediction (XGBoost)
 # MAGIC
 # MAGIC **Purpose:** Train an XGBoost regression model to predict the percentage change in
-# MAGIC revenue (`revenue_delta_pct`) given a proposed price change and contextual product,
+# MAGIC revenue (`volume_delta_pct`) given a proposed price change and contextual product,
 # MAGIC market, and contract features. The model enforces monotone constraints so that
 # MAGIC price-elasticity economics are respected (e.g., large price increases are penalised
 # MAGIC directionally). SHAP explanations are computed and logged for interpretability.
@@ -88,26 +88,25 @@ SEED = 42
 np.random.seed(SEED)
 
 # -- Target and feature lists ---------------------------------------------------
-TARGET = "revenue_delta_pct"
+TARGET = "volume_delta_pct"
 
 NUMERIC_FEATURES: List[str] = [
-    "predicted_elasticity_score",
-    "proposed_price_delta",
-    "current_volume",
-    "units_3mo_avg",
-    "cogs_pct",
-    "direct_channel_pct",
-    "macro_pressure_score",
-    "contract_tier_mix",
-    "gpo_concentration",
-    "seasonal_index",
-    "market_share_pct",
+    "price_delta_pct",
+    "avg_pocket_price",
+    "discount_depth_avg",
+    "price_realization_avg",
+    "margin_pct_avg",
+    "seasonal_index_avg",
     "competitor_asp_gap",
-    "price_realization_pct",
+    "market_share_pct",
+    "tariff_impact_index",
+    "macro_pressure_score",
+    "gpo_concentration",
+    "contract_mix_score",
+    "innovation_tier",
 ]
 
 CATEGORICAL_FEATURES: List[str] = [
-    "innovation_tier",
 ]
 
 ALL_FEATURES: List[str] = NUMERIC_FEATURES + CATEGORICAL_FEATURES
@@ -153,6 +152,21 @@ if missing_cols:
     raise ValueError(f"Missing columns in source table: {missing_cols}")
 
 print("All required columns present.")
+
+# --- Clean NaN / Inf values in target and features ---
+_initial_rows = len(raw_df)
+raw_df = raw_df.replace([np.inf, -np.inf], np.nan)
+raw_df = raw_df.dropna(subset=[TARGET])
+# Fill remaining NaN in numeric features with column median
+for col in NUMERIC_FEATURES:
+    if col in raw_df.columns and raw_df[col].isna().any():
+        raw_df[col] = raw_df[col].fillna(raw_df[col].median())
+raw_df = raw_df.reset_index(drop=True)
+_dropped = _initial_rows - len(raw_df)
+if _dropped > 0:
+    print(f"Dropped {_dropped} rows with NaN/Inf in target column '{TARGET}'")
+print(f"Clean DataFrame shape: {raw_df.shape}")
+
 raw_df[ALL_FEATURES + [TARGET]].describe().T
 
 # COMMAND ----------
@@ -176,15 +190,15 @@ def build_preprocessor(
     Returns:
         Fitted-ready ColumnTransformer instance.
     """
+    transformers = [("num", "passthrough", numeric_features)]
+    if categorical_features:
+        transformers.append((
+            "cat",
+            OneHotEncoder(handle_unknown="ignore", sparse=False, drop="if_binary"),
+            categorical_features,
+        ))
     return ColumnTransformer(
-        transformers=[
-            ("num", "passthrough", numeric_features),
-            (
-                "cat",
-                OneHotEncoder(handle_unknown="ignore", sparse_output=False, drop="if_binary"),
-                categorical_features,
-            ),
-        ],
+        transformers=transformers,
         remainder="drop",
         verbose_feature_names_out=False,
     )
@@ -271,15 +285,13 @@ def build_monotone_constraints(
 
 
 # Domain-driven monotone constraints:
-#   - proposed_price_delta: NEGATIVE (-1) -- raising price should decrease revenue, ceteris paribus
-#   - predicted_elasticity_score: NEGATIVE (-1) -- higher elasticity means more revenue loss from price changes
-#   - market_share_pct: POSITIVE (+1) -- higher share generally supports revenue
-#   - current_volume: POSITIVE (+1) -- higher base volume supports revenue
+#   - price_delta_pct: NEGATIVE (-1) -- raising price should decrease volume, ceteris paribus
+#   - market_share_pct: POSITIVE (+1) -- higher share generally supports volume
+#   - avg_pocket_price: POSITIVE (+1) -- higher base price supports revenue context
 CONSTRAINTS_MAP: Dict[str, int] = {
-    "proposed_price_delta": -1,
-    "predicted_elasticity_score": -1,
+    "price_delta_pct": -1,
     "market_share_pct": 1,
-    "current_volume": 1,
+    "avg_pocket_price": 1,
 }
 
 monotone_constraints_tuple, applied_constraints = build_monotone_constraints(
@@ -555,7 +567,7 @@ def compute_and_log_shap(
     print(f"Saved SHAP feature importance bar plot: {bar_path}")
 
     # --- Dependence plots for key features ---
-    key_features = ["proposed_price_delta", "predicted_elasticity_score", "market_share_pct"]
+    key_features = ["price_delta_pct", "avg_pocket_price", "market_share_pct"]
     for feat in key_features:
         if feat in feature_names:
             fig_dep, ax_dep = plt.subplots(figsize=(8, 6))
@@ -619,9 +631,9 @@ def run_sanity_checks(
     print("=" * 70)
 
     def predict_with_price_delta(delta_val: float) -> float:
-        """Predict revenue_delta_pct for a given proposed_price_delta, holding other features at reference values."""
+        """Predict volume_delta_pct for a given price_delta_pct, holding other features at reference values."""
         row = reference_row.copy()
-        row["proposed_price_delta"] = delta_val
+        row["price_delta_pct"] = delta_val
         X_enc = preprocessor.transform(row)
         return float(model.predict(X_enc)[0])
 
@@ -632,11 +644,11 @@ def run_sanity_checks(
     pred_plus50 = predict_with_price_delta(50.0)
     pred_minus50 = predict_with_price_delta(-50.0)
 
-    print(f"\n  Price delta =  0.0%  -> predicted revenue_delta_pct = {pred_zero:+.4f}%")
-    print(f"  Price delta = +1.0%  -> predicted revenue_delta_pct = {pred_plus1:+.4f}%")
-    print(f"  Price delta = -1.0%  -> predicted revenue_delta_pct = {pred_minus1:+.4f}%")
-    print(f"  Price delta = +50.0% -> predicted revenue_delta_pct = {pred_plus50:+.4f}%")
-    print(f"  Price delta = -50.0% -> predicted revenue_delta_pct = {pred_minus50:+.4f}%")
+    print(f"\n  Price delta =  0.0%  -> predicted volume_delta_pct = {pred_zero:+.4f}%")
+    print(f"  Price delta = +1.0%  -> predicted volume_delta_pct = {pred_plus1:+.4f}%")
+    print(f"  Price delta = -1.0%  -> predicted volume_delta_pct = {pred_minus1:+.4f}%")
+    print(f"  Price delta = +50.0% -> predicted volume_delta_pct = {pred_plus50:+.4f}%")
+    print(f"  Price delta = -50.0% -> predicted volume_delta_pct = {pred_minus50:+.4f}%")
 
     # Check 1 & 2: Small price changes should not cause extreme revenue swings
     SMALL_DELTA_MAX_IMPACT = 20.0
@@ -748,8 +760,8 @@ with mlflow.start_run(run_name="revenue_impact_xgb_production") as run:
         max(y_test.max(), y_pred_test.max()) + 1,
     ]
     ax_pred.plot(lims, lims, "r--", linewidth=1.5, label="Perfect prediction")
-    ax_pred.set_xlabel("Actual revenue_delta_pct")
-    ax_pred.set_ylabel("Predicted revenue_delta_pct")
+    ax_pred.set_xlabel("Actual volume_delta_pct")
+    ax_pred.set_ylabel("Predicted volume_delta_pct")
     ax_pred.set_title(f"Actual vs Predicted (Test) | R2={test_metrics['r2']:.3f}")
     ax_pred.legend()
     ax_pred.set_aspect("equal")
@@ -779,7 +791,7 @@ with mlflow.start_run(run_name="revenue_impact_xgb_production") as run:
     y_sample = pd.Series(y.iloc[:5].values, name=TARGET)
     signature = infer_signature(X_sample, y_sample)
 
-    mlflow.xgboost.log_model(
+    model_info = mlflow.xgboost.log_model(
         xgb_model=production_model,
         artifact_path="model",
         signature=signature,
@@ -788,8 +800,20 @@ with mlflow.start_run(run_name="revenue_impact_xgb_production") as run:
     )
 
     run_id = run.info.run_id
+
+    # Set alias for Unity Catalog model versioning
+    from mlflow import MlflowClient
+    uc_client = MlflowClient(registry_uri="databricks-uc")
+    model_version = model_info.registered_model_version
+    uc_client.set_registered_model_alias(
+        name=MODEL_REGISTRY_NAME,
+        alias="champion",
+        version=model_version,
+    )
+
     print(f"\nMLflow Run ID: {run_id}")
-    print(f"Model registered as: {MODEL_REGISTRY_NAME}")
+    print(f"Model registered as: {MODEL_REGISTRY_NAME} v{model_version}")
+    print(f"Alias 'champion' set to v{model_version}")
     print(f"Test RMSE: {test_metrics['rmse']:.4f}")
     print(f"Test MAE:  {test_metrics['mae']:.4f}")
     print(f"Test R2:   {test_metrics['r2']:.4f}")
@@ -823,10 +847,9 @@ Test R2:             {test_metrics['r2']:.4f}
 Test MAPE:           {test_metrics['mape']:.4f}
 
 Monotone Constraints Applied:
-  proposed_price_delta:      DECREASING (-1)
-  predicted_elasticity_score: DECREASING (-1)
+  price_delta_pct:           DECREASING (-1)
   market_share_pct:          INCREASING (+1)
-  current_volume:            INCREASING (+1)
+  avg_pocket_price:          INCREASING (+1)
 
 Sanity Checks:       ALL PASSED
 SHAP Artifacts:      Logged to MLflow

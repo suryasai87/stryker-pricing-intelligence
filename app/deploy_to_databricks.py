@@ -118,31 +118,75 @@ def upload_source(app_name: str, profile: Optional[str] = None) -> str:
     """
     Upload the application source to the Databricks workspace.
 
+    Creates a clean staging directory excluding node_modules, .git, dist, etc.
+    then uploads only the necessary files.
+
     Returns:
         The workspace path where the source was uploaded.
     """
+    import shutil
+    import tempfile
+
     workspace_path = f"{WORKSPACE_UPLOAD_BASE}/{app_name}"
     print(f"\n[2/4] Uploading source to {workspace_path} ...")
 
-    # Create the workspace directory
-    _run_cli(
-        ["workspace", "mkdirs", workspace_path],
-        profile=profile,
-    )
+    # Create a clean staging directory with only the files we need
+    staging_dir = Path(tempfile.mkdtemp(prefix="deploy_staging_"))
+    try:
+        # Patterns to exclude from upload
+        exclude_patterns = {
+            "node_modules", ".vite", "dist", "__pycache__", ".git",
+            ".env", ".pytest_cache", ".mypy_cache", "*.pyc",
+        }
 
-    # Upload the app directory contents
-    _run_cli(
-        [
-            "workspace",
-            "import-dir",
-            str(SCRIPT_DIR),
-            workspace_path,
-            "--overwrite",
-        ],
-        profile=profile,
-    )
+        def should_exclude(path: Path) -> bool:
+            """Check if a path should be excluded from upload."""
+            for part in path.parts:
+                if part in exclude_patterns:
+                    return True
+                for pattern in exclude_patterns:
+                    if pattern.startswith("*") and part.endswith(pattern[1:]):
+                        return True
+            return False
 
-    print(f"Source uploaded to {workspace_path}")
+        # Copy files to staging, respecting exclusions
+        for item in SCRIPT_DIR.rglob("*"):
+            if item.is_file():
+                rel = item.relative_to(SCRIPT_DIR)
+                if should_exclude(rel):
+                    continue
+                dest = staging_dir / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(item, dest)
+
+        # Count files for user feedback
+        staged_files = list(staging_dir.rglob("*"))
+        file_count = sum(1 for f in staged_files if f.is_file())
+        print(f"  Staged {file_count} files (excluded node_modules, .git, etc.)")
+
+        # Create the workspace directory
+        _run_cli(
+            ["workspace", "mkdirs", workspace_path],
+            profile=profile,
+        )
+
+        # Upload the clean staging directory
+        _run_cli(
+            [
+                "workspace",
+                "import-dir",
+                str(staging_dir),
+                workspace_path,
+                "--overwrite",
+            ],
+            profile=profile,
+        )
+
+        print(f"Source uploaded to {workspace_path}")
+    finally:
+        # Clean up staging directory
+        shutil.rmtree(staging_dir, ignore_errors=True)
+
     return workspace_path
 
 
