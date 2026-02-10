@@ -1,0 +1,36 @@
+# Databricks App resource definition for Stryker Pricing Intelligence Platform.
+#
+# The app serves a React frontend (pre-built into static/) via FastAPI with
+# data sourced from Unity Catalog gold-layer tables through a SQL warehouse.
+
+resources:
+  apps:
+    stryker_pricing_intel:
+      name: stryker-pricing-intel-${bundle.target}
+      description: >
+        Stryker Pricing Intelligence Platform - Interactive pricing analytics,
+        simulation, competitive benchmarking, and ML-driven recommendations
+        for medical device pricing optimization.
+      source_code_path: ../app
+      config:
+        command:
+          - uvicorn
+          - backend.main:app
+          - --host
+          - "0.0.0.0"
+          - --port
+          - "8000"
+        env:
+          - name: DATABRICKS_WAREHOUSE_ID
+            value: ${var.warehouse_id}
+          - name: CATALOG_NAME
+            value: ${var.catalog}
+          - name: SCHEMA_GOLD
+            value: ${var.schema_gold}
+          - name: SCHEMA_SILVER
+            value: ${var.schema_silver}
+          - name: DATABRICKS_SERVING_ENDPOINT
+            value: ${var.serving_endpoint}
+      permissions:
+        - level: CAN_MANAGE
+          user_name: suryasai.turaga@databricks.com

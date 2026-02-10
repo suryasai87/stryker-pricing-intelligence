@@ -1,0 +1,204 @@
+# Databricks Job resource for the Pricing Intelligence data pipeline.
+#
+# Executes the full notebook chain that builds dimension tables, the FICM
+# pricing master, gold-layer analytics tables, ML training notebooks, and
+# the end-to-end validation notebook.
+#
+# Dependency chain:
+#   12a (dimensions) -> 12 (ficm master) -> 13,14 (parallel gold) ->
+#   15 (uplift) -> 16 (recommendations) -> 17 (top100) -> 18 (scenarios) ->
+#   19 (external) -> 20,21 (ML training, parallel) -> 99 (validation)
+
+resources:
+  jobs:
+    pricing_pipeline:
+      name: "[${bundle.target}] Pricing Intelligence Pipeline"
+      description: >
+        End-to-end pipeline for the Stryker Pricing Intelligence Platform.
+        Builds silver dimension tables, the FICM pricing master, all gold
+        analytics tables, trains ML models, and validates the output.
+      tags:
+        project: stryker-pricing-intel
+        team: hls-amer
+        layer: data-pipeline
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: America/New_York
+        pause_status: PAUSED
+      email_notifications:
+        on_failure:
+          - suryasai.turaga@databricks.com
+      tasks:
+        # ---------------------------------------------------------------
+        # Stage 1: Silver dimension tables
+        # ---------------------------------------------------------------
+        - task_key: dimensions
+          description: "Create silver dimension tables (dim_customers, dim_sales_reps, dim_products)"
+          notebook_task:
+            notebook_path: ../notebooks/12a_ficm_dimensions.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 2: FICM Pricing Master (silver)
+        # ---------------------------------------------------------------
+        - task_key: ficm_master
+          description: "Build the FICM pricing master table (600K rows)"
+          depends_on:
+            - task_key: dimensions
+          notebook_task:
+            notebook_path: ../notebooks/12_ficm_pricing_master.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 2
+
+        # ---------------------------------------------------------------
+        # Stage 3: Gold analytics (can run in parallel)
+        # ---------------------------------------------------------------
+        - task_key: discount_outliers
+          description: "Detect discount outliers using IQR and Z-score methods"
+          depends_on:
+            - task_key: ficm_master
+          notebook_task:
+            notebook_path: ../notebooks/13_gold_discount_outliers.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: price_elasticity
+          description: "Compute price elasticity coefficients per product-segment"
+          depends_on:
+            - task_key: ficm_master
+          notebook_task:
+            notebook_path: ../notebooks/14_gold_price_elasticity.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 4: Uplift simulation (needs elasticity + outliers)
+        # ---------------------------------------------------------------
+        - task_key: uplift_simulation
+          description: "Run uplift simulations combining elasticity and discount data"
+          depends_on:
+            - task_key: discount_outliers
+            - task_key: price_elasticity
+          notebook_task:
+            notebook_path: ../notebooks/15_gold_uplift_simulation.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 5: Pricing recommendations
+        # ---------------------------------------------------------------
+        - task_key: pricing_recommendations
+          description: "Generate ML-driven pricing recommendations"
+          depends_on:
+            - task_key: uplift_simulation
+          notebook_task:
+            notebook_path: ../notebooks/16_gold_pricing_recommendations.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 6: Top 100 changes
+        # ---------------------------------------------------------------
+        - task_key: top100_changes
+          description: "Curate top-100 highest-priority pricing actions"
+          depends_on:
+            - task_key: pricing_recommendations
+          notebook_task:
+            notebook_path: ../notebooks/17_gold_top100_recommended_changes.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 7: Custom pricing scenarios table
+        # ---------------------------------------------------------------
+        - task_key: custom_scenarios
+          description: "Create the custom_pricing_scenarios Delta table and seed defaults"
+          depends_on:
+            - task_key: top100_changes
+          notebook_task:
+            notebook_path: ../notebooks/18_create_custom_pricing_scenarios_table.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 8: External data integration
+        # ---------------------------------------------------------------
+        - task_key: external_data
+          description: "Load external market data from CSV volumes into gold layer"
+          depends_on:
+            - task_key: custom_scenarios
+          notebook_task:
+            notebook_path: ../notebooks/19_gold_external_data_integration.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 9: ML model training (can run in parallel)
+        # ---------------------------------------------------------------
+        - task_key: train_anomaly_model
+          description: "Train discount anomaly detection model with MLflow tracking"
+          depends_on:
+            - task_key: external_data
+          notebook_task:
+            notebook_path: ../notebooks/20_train_discount_anomaly_model.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-ml-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        - task_key: train_elasticity_model
+          description: "Train advanced price elasticity model with MLflow tracking"
+          depends_on:
+            - task_key: external_data
+          notebook_task:
+            notebook_path: ../notebooks/21_train_advanced_elasticity_model.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-ml-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1
+
+        # ---------------------------------------------------------------
+        # Stage 10: End-to-end validation
+        # ---------------------------------------------------------------
+        - task_key: validate
+          description: "Validate all tables, row counts, schema, and cross-table referential integrity"
+          depends_on:
+            - task_key: train_anomaly_model
+            - task_key: train_elasticity_model
+          notebook_task:
+            notebook_path: ../notebooks/99_validate_end_to_end.py
+            source: WORKSPACE
+          new_cluster:
+            spark_version: "15.4.x-scala2.12"
+            node_type_id: "i3.xlarge"
+            num_workers: 1

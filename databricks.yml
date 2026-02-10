@@ -1,0 +1,54 @@
+# Databricks Asset Bundles configuration for Stryker Pricing Intelligence Platform.
+#
+# Deploy with:
+#   databricks bundle deploy -t dev        (default)
+#   databricks bundle deploy -t staging
+#   databricks bundle deploy -t prod
+#
+# Or use the automated deploy.py wrapper:
+#   python deploy.py dev
+
+bundle:
+  name: stryker-pricing-intel
+
+variables:
+  catalog:
+    description: Unity Catalog catalog name
+    default: hls_amer_catalog
+  schema_silver:
+    description: Silver layer schema
+    default: silver
+  schema_gold:
+    description: Gold layer schema
+    default: gold
+  warehouse_id:
+    description: SQL warehouse ID for query execution
+    default: 4b28691c780d9875
+  serving_endpoint:
+    description: Model serving endpoint name
+    default: stryker-pricing-models
+
+include:
+  - resources/*.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://fe-vm-hls-amer.cloud.databricks.com
+    variables:
+      catalog: hls_amer_catalog
+
+  staging:
+    workspace:
+      host: https://fe-vm-hls-amer.cloud.databricks.com
+    variables:
+      catalog: hls_amer_catalog
+
+  prod:
+    mode: production
+    workspace:
+      host: https://fe-vm-hls-amer.cloud.databricks.com
+    variables:
+      catalog: hls_amer_catalog
