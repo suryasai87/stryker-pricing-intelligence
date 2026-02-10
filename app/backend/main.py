@@ -42,6 +42,16 @@ from backend.services.catalog import (
 from backend.services.prediction import simulate_price_change
 from backend.utils.config import APP_TITLE, APP_VERSION, LOG_LEVEL, STATIC_FILES_DIR
 
+# v2 routers (Advanced Analytics)
+from backend.routers.v2_ficm import router as ficm_router
+from backend.routers.v2_discount_outliers import router as discount_outliers_router
+from backend.routers.v2_price_elasticity import router as price_elasticity_router
+from backend.routers.v2_uplift_simulation import router as uplift_simulation_router
+from backend.routers.v2_top100_changes import router as top100_router
+from backend.routers.v2_pricing_recommendations import router as recommendations_router
+from backend.routers.v2_external_data import router as external_data_router
+from backend.routers.v2_pricing_scenarios import router as scenarios_router
+
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -282,6 +292,19 @@ async def api_batch_scenario(
                 exc,
             )
     return BatchScenarioResponse(results=results)
+
+
+# ---------------------------------------------------------------------------
+# v2 API routers (Advanced Analytics)
+# ---------------------------------------------------------------------------
+app.include_router(ficm_router)
+app.include_router(discount_outliers_router)
+app.include_router(price_elasticity_router)
+app.include_router(uplift_simulation_router)
+app.include_router(top100_router)
+app.include_router(recommendations_router)
+app.include_router(external_data_router)
+app.include_router(scenarios_router)
 
 
 # ---------------------------------------------------------------------------

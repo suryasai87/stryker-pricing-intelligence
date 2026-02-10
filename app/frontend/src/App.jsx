@@ -13,6 +13,13 @@ import {
   CurrencyDollarIcon,
   BellIcon,
   UserCircleIcon,
+  ExclamationTriangleIcon,
+  ChartBarSquareIcon,
+  RocketLaunchIcon,
+  TrophyIcon,
+  SparklesIcon,
+  FolderArrowDownIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline';
 
 // Lazy-loaded page components
@@ -21,6 +28,15 @@ const PriceSimulator = lazy(() => import('./pages/PriceSimulator'));
 const PriceWaterfall = lazy(() => import('./pages/PriceWaterfall'));
 const CompetitiveLandscape = lazy(() => import('./pages/CompetitiveLandscape'));
 const ExternalFactors = lazy(() => import('./pages/ExternalFactors'));
+
+// v2 Advanced Analytics pages
+const DiscountOutliers = lazy(() => import('./pages/DiscountOutliers'));
+const PriceElasticity = lazy(() => import('./pages/PriceElasticity'));
+const UpliftSimulator = lazy(() => import('./pages/UpliftSimulator'));
+const Top100Changes = lazy(() => import('./pages/Top100Changes'));
+const AIRecommendations = lazy(() => import('./pages/AIRecommendations'));
+const ExternalDataPage = lazy(() => import('./pages/ExternalData'));
+const PricingScenarios = lazy(() => import('./pages/PricingScenarios'));
 
 // Spring animation config used across all transitions
 const springTransition = {
@@ -43,6 +59,17 @@ const navItems = [
   { path: '/waterfall', label: 'Price Waterfall', icon: ArrowTrendingUpIcon },
   { path: '/competitive', label: 'Competitive Landscape', icon: GlobeAltIcon },
   { path: '/external', label: 'External Factors', icon: BoltIcon },
+];
+
+// Advanced Analytics navigation items (v2)
+const advancedNavItems = [
+  { path: '/discount-outliers', label: 'Discount Outliers', icon: ExclamationTriangleIcon },
+  { path: '/price-elasticity', label: 'Price Elasticity', icon: ChartBarSquareIcon },
+  { path: '/uplift-simulator', label: 'Uplift Simulator', icon: RocketLaunchIcon },
+  { path: '/top-100', label: 'Top 100 Changes', icon: TrophyIcon },
+  { path: '/ai-recommendations', label: 'AI Recommendations', icon: SparklesIcon },
+  { path: '/external-data', label: 'External Data', icon: FolderArrowDownIcon },
+  { path: '/pricing-scenarios', label: 'Pricing Scenarios', icon: BeakerIcon },
 ];
 
 // Loading spinner for lazy-loaded pages
@@ -137,13 +164,49 @@ function Sidebar({ isOpen, onClose }) {
               )}
             </NavLink>
           ))}
+
+          {/* Advanced Analytics divider */}
+          <div className="pt-4 pb-2 px-3">
+            <p className="text-[10px] text-white/30 font-semibold uppercase tracking-widest">Advanced Analytics</p>
+            <div className="mt-2 border-t border-white/10" />
+          </div>
+
+          {advancedNavItems.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              onClick={onClose}
+              className={({ isActive }) =>
+                clsx(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                  isActive
+                    ? 'bg-stryker-primary/20 text-stryker-primary border border-stryker-primary/30'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <item.icon className={clsx('w-5 h-5 flex-shrink-0', isActive ? 'text-stryker-primary' : 'text-white/40')} />
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="nav-indicator"
+                      className="ml-auto w-1.5 h-1.5 rounded-full bg-stryker-primary"
+                      transition={springTransition}
+                    />
+                  )}
+                </>
+              )}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Sidebar footer */}
         <div className="px-4 py-4 border-t border-white/10">
           <div className="glass-card p-3 rounded-lg">
             <p className="text-[11px] text-white/40 font-medium">Platform Version</p>
-            <p className="text-xs text-white/70 font-mono mt-0.5">v1.0.0 -- Stryker MedTech</p>
+            <p className="text-xs text-white/70 font-mono mt-0.5">v2.0.0 -- Stryker MedTech</p>
           </div>
         </div>
       </motion.aside>
@@ -232,6 +295,14 @@ export default function App() {
                   <Route path="/waterfall" element={<PriceWaterfall />} />
                   <Route path="/competitive" element={<CompetitiveLandscape />} />
                   <Route path="/external" element={<ExternalFactors />} />
+                  {/* v2 Advanced Analytics routes */}
+                  <Route path="/discount-outliers" element={<DiscountOutliers />} />
+                  <Route path="/price-elasticity" element={<PriceElasticity />} />
+                  <Route path="/uplift-simulator" element={<UpliftSimulator />} />
+                  <Route path="/top-100" element={<Top100Changes />} />
+                  <Route path="/ai-recommendations" element={<AIRecommendations />} />
+                  <Route path="/external-data" element={<ExternalDataPage />} />
+                  <Route path="/pricing-scenarios" element={<PricingScenarios />} />
                 </Routes>
               </Suspense>
             </motion.div>

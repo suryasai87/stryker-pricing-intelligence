@@ -1,0 +1,53 @@
+data_source,upload_timestamp,category,item_key,item_description,value,unit,effective_date,region,notes
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,HTS-7208.51,Hot-rolled steel plate tariff rate,25.0,percent,2024-10-01,US,Section 232 steel tariff
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,HTS-7208.52,Hot-rolled steel coil tariff rate,25.0,percent,2024-10-01,US,Section 232 steel tariff
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,HTS-8108.20,Titanium unwrought tariff rate,0.0,percent,2024-10-01,US,No current tariff on titanium ingot
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,HTS-8108.90,Titanium articles tariff rate,5.5,percent,2024-10-01,US,General tariff rate
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,HTS-9021.10,Orthopaedic implant tariff rate,0.0,percent,2024-10-01,US,Duty-free under HTS
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,HTS-9021.31,Artificial joint tariff rate,0.0,percent,2024-10-01,US,Duty-free medical device
+USTR_Tariff_Schedule,2024-12-01T08:00:00,tariff,HTS-7208.51,Hot-rolled steel plate tariff rate,25.0,percent,2024-12-01,US,Section 232 maintained
+USTR_Tariff_Schedule,2024-12-01T08:00:00,tariff,HTS-7219.11,Stainless steel hot-rolled tariff rate,25.0,percent,2024-12-01,US,Section 232 stainless
+USTR_Tariff_Schedule,2025-01-15T08:00:00,tariff,HTS-7208.51,Hot-rolled steel plate tariff rate,25.0,percent,2025-01-01,US,Q1 2025 rate unchanged
+USTR_Tariff_Schedule,2025-01-15T08:00:00,tariff,HTS-7601.10,Aluminum unwrought tariff rate,10.0,percent,2025-01-01,US,Section 232 aluminum
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,EU-CBAM-Steel,EU CBAM steel import adjustment,26.1,EUR_per_tonne_CO2,2024-10-01,EU,Carbon border adjustment
+USTR_Tariff_Schedule,2024-11-01T08:00:00,tariff,EU-MDR-Compliance,EU MDR compliance surcharge estimate,3.2,percent,2024-10-01,EU,Regulatory compliance cost
+LME_Daily,2024-10-15T16:00:00,commodity,LME-COBALT,Cobalt cathode spot price,33450.0,USD_per_tonne,2024-10-15,,LME settlement
+LME_Daily,2024-10-15T16:00:00,commodity,LME-NICKEL,Nickel spot price,18250.0,USD_per_tonne,2024-10-15,,LME settlement
+LME_Daily,2024-10-15T16:00:00,commodity,LME-TIN,Tin spot price,31800.0,USD_per_tonne,2024-10-15,,LME settlement
+LME_Daily,2024-11-15T16:00:00,commodity,LME-COBALT,Cobalt cathode spot price,34100.0,USD_per_tonne,2024-11-15,,LME settlement
+LME_Daily,2024-11-15T16:00:00,commodity,LME-NICKEL,Nickel spot price,17850.0,USD_per_tonne,2024-11-15,,LME settlement
+LME_Daily,2024-12-15T16:00:00,commodity,LME-COBALT,Cobalt cathode spot price,33800.0,USD_per_tonne,2024-12-15,,LME settlement
+LME_Daily,2024-12-15T16:00:00,commodity,LME-NICKEL,Nickel spot price,18500.0,USD_per_tonne,2024-12-15,,LME settlement
+LME_Daily,2025-01-15T16:00:00,commodity,LME-COBALT,Cobalt cathode spot price,35200.0,USD_per_tonne,2025-01-15,,LME settlement
+LME_Daily,2025-01-15T16:00:00,commodity,LME-NICKEL,Nickel spot price,18100.0,USD_per_tonne,2025-01-15,,LME settlement
+Platts_Metals,2024-10-01T12:00:00,commodity,PLATTS-TI-6AL4V,Titanium Ti-6Al-4V bar price,18.50,USD_per_lb,2024-10-01,US,Aerospace/medical grade
+Platts_Metals,2024-11-01T12:00:00,commodity,PLATTS-TI-6AL4V,Titanium Ti-6Al-4V bar price,19.10,USD_per_lb,2024-11-01,US,Price increase due to demand
+Platts_Metals,2024-12-01T12:00:00,commodity,PLATTS-TI-6AL4V,Titanium Ti-6Al-4V bar price,19.45,USD_per_lb,2024-12-01,US,Continued upward pressure
+Platts_Metals,2025-01-01T12:00:00,commodity,PLATTS-TI-6AL4V,Titanium Ti-6Al-4V bar price,19.80,USD_per_lb,2025-01-01,US,Q1 2025 pricing
+Platts_Metals,2024-10-01T12:00:00,commodity,PLATTS-316L-SS,316L surgical stainless steel plate,3.85,USD_per_lb,2024-10-01,US,Medical grade stainless
+Platts_Metals,2024-11-01T12:00:00,commodity,PLATTS-316L-SS,316L surgical stainless steel plate,3.92,USD_per_lb,2024-11-01,US,Slight increase
+Platts_Metals,2024-12-01T12:00:00,commodity,PLATTS-316L-SS,316L surgical stainless steel plate,4.05,USD_per_lb,2024-12-01,US,Year-end increase
+Platts_Metals,2025-01-01T12:00:00,commodity,PLATTS-316L-SS,316L surgical stainless steel plate,4.10,USD_per_lb,2025-01-01,US,Q1 2025 pricing
+Platts_Metals,2024-10-01T12:00:00,commodity,PLATTS-UHMWPE,UHMWPE medical grade resin,4.20,USD_per_lb,2024-10-01,US,Polyethylene for bearings
+Platts_Metals,2024-12-01T12:00:00,commodity,PLATTS-UHMWPE,UHMWPE medical grade resin,4.35,USD_per_lb,2024-12-01,US,Petrochemical-linked increase
+ECB_FX,2024-10-01T14:00:00,fx,EUR-USD,Euro to US Dollar exchange rate,1.1165,ratio,2024-10-01,,ECB reference rate
+ECB_FX,2024-11-01T14:00:00,fx,EUR-USD,Euro to US Dollar exchange rate,1.0880,ratio,2024-11-01,,ECB reference rate
+ECB_FX,2024-12-01T14:00:00,fx,EUR-USD,Euro to US Dollar exchange rate,1.0565,ratio,2024-12-01,,ECB reference rate
+ECB_FX,2025-01-01T14:00:00,fx,EUR-USD,Euro to US Dollar exchange rate,1.0390,ratio,2025-01-01,,ECB reference rate
+ECB_FX,2024-10-01T14:00:00,fx,GBP-USD,British Pound to US Dollar,1.3375,ratio,2024-10-01,,ECB reference rate
+ECB_FX,2024-12-01T14:00:00,fx,GBP-USD,British Pound to US Dollar,1.2715,ratio,2024-12-01,,ECB reference rate
+ECB_FX,2024-10-01T14:00:00,fx,JPY-USD,Japanese Yen to US Dollar,0.006720,ratio,2024-10-01,,ECB reference rate
+ECB_FX,2024-12-01T14:00:00,fx,JPY-USD,Japanese Yen to US Dollar,0.006540,ratio,2024-12-01,,ECB reference rate
+ECB_FX,2025-01-01T14:00:00,fx,JPY-USD,Japanese Yen to US Dollar,0.006380,ratio,2025-01-01,,ECB reference rate
+ECB_FX,2024-10-01T14:00:00,fx,CHF-USD,Swiss Franc to US Dollar,1.1580,ratio,2024-10-01,,ECB reference rate
+ECB_FX,2024-12-01T14:00:00,fx,CHF-USD,Swiss Franc to US Dollar,1.1320,ratio,2024-12-01,,ECB reference rate
+Market_Intelligence,2024-11-15T10:00:00,competitor,COMP-ZBH-KNEE,Zimmer Biomet Persona knee ASP estimate,5850.0,USD,2024-11-01,US,Industry intelligence
+Market_Intelligence,2024-11-15T10:00:00,competitor,COMP-JNJ-HIP,DePuy Synthes Corail hip ASP estimate,5200.0,USD,2024-11-01,US,Industry intelligence
+Market_Intelligence,2024-11-15T10:00:00,competitor,COMP-SNN-KNEE,Smith+Nephew JOURNEY II knee ASP estimate,5650.0,USD,2024-11-01,US,Industry intelligence
+Market_Intelligence,2024-11-15T10:00:00,competitor,COMP-ZBH-ROSA,Zimmer Biomet ROSA robot list price,850000.0,USD,2024-11-01,US,Capital equipment benchmark
+Market_Intelligence,2025-01-10T10:00:00,competitor,COMP-ZBH-KNEE,Zimmer Biomet Persona knee ASP estimate,5950.0,USD,2025-01-01,US,Q1 2025 updated estimate
+Market_Intelligence,2025-01-10T10:00:00,competitor,COMP-JNJ-HIP,DePuy Synthes Corail hip ASP estimate,5350.0,USD,2025-01-01,US,Q1 2025 updated estimate
+Market_Intelligence,2025-01-10T10:00:00,competitor,COMP-HILLROM-BED,Hill-Rom Centrella ICU bed ASP,38500.0,USD,2025-01-01,US,Acute care segment
+BLS_CPI,2024-10-10T08:30:00,commodity,CPI-MEDICAL,CPI Medical Care Commodities index,395.2,index_1982_100,2024-10-01,US,BLS CPI-U Medical Care
+BLS_CPI,2024-11-10T08:30:00,commodity,CPI-MEDICAL,CPI Medical Care Commodities index,396.8,index_1982_100,2024-11-01,US,BLS CPI-U Medical Care
+BLS_CPI,2024-12-10T08:30:00,commodity,CPI-MEDICAL,CPI Medical Care Commodities index,398.1,index_1982_100,2024-12-01,US,BLS CPI-U Medical Care
