@@ -15,14 +15,14 @@ from typing import Any
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
-from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD
+from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD_V2
 from backend.utils.databricks_client import execute_sql
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/top100-price-changes", tags=["top100"])
 
-_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD}.top100_price_changes"
+_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD_V2}.top100_price_changes"
 
 # Allowed sort columns to prevent SQL injection via sort_by
 _ALLOWED_SORT_COLUMNS = {

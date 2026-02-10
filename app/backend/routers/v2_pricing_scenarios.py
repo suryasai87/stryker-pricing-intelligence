@@ -16,14 +16,14 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from backend.services.obo_auth import get_user_identity
-from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD
+from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD_V2
 from backend.utils.databricks_client import execute_sql
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/pricing-scenarios", tags=["scenarios"])
 
-_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD}.pricing_scenarios"
+_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD_V2}.pricing_scenarios"
 
 
 # ---------------------------------------------------------------------------

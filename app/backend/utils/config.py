@@ -18,6 +18,10 @@ SCHEMA_BRONZE: str = os.getenv("SCHEMA_BRONZE", "bronze")
 SCHEMA_SILVER: str = os.getenv("SCHEMA_SILVER", "silver")
 SCHEMA_GOLD: str = os.getenv("SCHEMA_GOLD", "gold")
 
+# v2 Advanced Analytics schemas (isolated from v1)
+SCHEMA_GOLD_V2: str = os.getenv("SCHEMA_GOLD_V2", "gold_v2")
+SCHEMA_SILVER_V2: str = os.getenv("SCHEMA_SILVER_V2", "silver_v2")
+
 # Fully-qualified table helpers
 def _fqn(schema: str, table: str) -> str:
     """Return a fully-qualified three-level Unity Catalog table name."""

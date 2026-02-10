@@ -13,7 +13,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
-from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD
+from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD_V2
 from backend.utils.databricks_client import execute_sql
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ router = APIRouter(
     prefix="/api/v2/pricing-recommendations", tags=["recommendations"]
 )
 
-_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD}.pricing_recommendations"
+_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD_V2}.pricing_recommendations"
 
 # Allowed sort columns
 _ALLOWED_SORT_COLUMNS = {

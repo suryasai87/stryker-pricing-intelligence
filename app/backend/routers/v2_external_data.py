@@ -16,15 +16,15 @@ from typing import Any
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
 from backend.services.file_ingestion import ingest_file
-from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD
+from backend.utils.config import CATALOG_NAME, SCHEMA_GOLD_V2
 from backend.utils.databricks_client import execute_sql, get_workspace_client
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/external-data", tags=["external-data"])
 
-_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD}.external_data"
-_VOLUME_PATH = f"/Volumes/{CATALOG_NAME}/{SCHEMA_GOLD}/external_uploads"
+_TABLE = f"{CATALOG_NAME}.{SCHEMA_GOLD_V2}.external_data"
+_VOLUME_PATH = f"/Volumes/{CATALOG_NAME}/{SCHEMA_GOLD_V2}/external_uploads"
 
 
 # ---------------------------------------------------------------------------

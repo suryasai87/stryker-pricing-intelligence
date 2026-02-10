@@ -12,14 +12,14 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
-from backend.utils.config import CATALOG_NAME, SCHEMA_SILVER
+from backend.utils.config import CATALOG_NAME, SCHEMA_SILVER_V2
 from backend.utils.databricks_client import execute_sql
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/ficm", tags=["ficm"])
 
-_TABLE = f"{CATALOG_NAME}.{SCHEMA_SILVER}.ficm_pricing_master"
+_TABLE = f"{CATALOG_NAME}.{SCHEMA_SILVER_V2}.ficm_pricing_master"
 
 
 # ---------------------------------------------------------------------------
@@ -45,7 +45,7 @@ async def get_ficm_summary() -> dict[str, Any]:
         overview_rows = execute_sql(
             overview_query,
             cache_key="ficm:summary:overview",
-            schema=SCHEMA_SILVER,
+            schema=SCHEMA_SILVER_V2,
         )
         overview = overview_rows[0] if overview_rows else {}
 
@@ -59,7 +59,7 @@ async def get_ficm_summary() -> dict[str, Any]:
         country_rows = execute_sql(
             country_query,
             cache_key="ficm:summary:country",
-            schema=SCHEMA_SILVER,
+            schema=SCHEMA_SILVER_V2,
         )
 
         # Segment breakdown
@@ -72,7 +72,7 @@ async def get_ficm_summary() -> dict[str, Any]:
         segment_rows = execute_sql(
             segment_query,
             cache_key="ficm:summary:segment",
-            schema=SCHEMA_SILVER,
+            schema=SCHEMA_SILVER_V2,
         )
 
         # Product family breakdown
@@ -85,7 +85,7 @@ async def get_ficm_summary() -> dict[str, Any]:
         product_family_rows = execute_sql(
             product_family_query,
             cache_key="ficm:summary:product_family",
-            schema=SCHEMA_SILVER,
+            schema=SCHEMA_SILVER_V2,
         )
 
         return {
@@ -119,7 +119,7 @@ async def get_ficm_schema() -> dict[str, Any]:
         rows = execute_sql(
             schema_query,
             cache_key="ficm:schema",
-            schema=SCHEMA_SILVER,
+            schema=SCHEMA_SILVER_V2,
         )
 
         columns = [
