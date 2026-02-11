@@ -19,6 +19,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.models import (
@@ -308,12 +309,36 @@ app.include_router(scenarios_router)
 
 
 # ---------------------------------------------------------------------------
-# Static files (frontend) -- must be last so it doesn't shadow API routes
+# Static files + SPA fallback -- must be last so it doesn't shadow API routes
 # ---------------------------------------------------------------------------
 _static_dir = os.path.join(os.path.dirname(__file__), "..", STATIC_FILES_DIR)
+_static_dir = os.path.abspath(_static_dir)
+
 if os.path.isdir(_static_dir):
-    app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")
-    logger.info("Mounted static files from %s", _static_dir)
+    # Serve built assets (JS, CSS, images) at /assets
+    _assets_dir = os.path.join(_static_dir, "assets")
+    if os.path.isdir(_assets_dir):
+        app.mount("/assets", StaticFiles(directory=_assets_dir), name="assets")
+
+    # Favicon
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon():
+        ico = os.path.join(_static_dir, "favicon.ico")
+        if os.path.isfile(ico):
+            return FileResponse(ico)
+        return FileResponse(os.path.join(_static_dir, "index.html"), media_type="text/html")
+
+    # SPA catch-all: serve index.html for any non-API path (React Router)
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        file_path = os.path.join(_static_dir, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        return FileResponse(os.path.join(_static_dir, "index.html"), media_type="text/html")
+
+    logger.info("Mounted SPA static files from %s", _static_dir)
 else:
     logger.warning(
         "Static directory %s not found; frontend will not be served", _static_dir
