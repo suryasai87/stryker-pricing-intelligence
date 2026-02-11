@@ -129,6 +129,16 @@ export default function SimulatorPage() {
     [predict, reset]
   );
 
+  // Auto-select the first product when products load
+  const handleProductsLoaded = useCallback(
+    (products) => {
+      if (!selectedProduct && products.length > 0) {
+        handleProductSelect(products[0]);
+      }
+    },
+    [selectedProduct, handleProductSelect]
+  );
+
   const handleSaveScenario = () => {
     if (!predictions || !selectedProduct || !scenarioName.trim()) return;
     const newScenario = {
@@ -207,7 +217,7 @@ export default function SimulatorPage() {
         <label className="text-white/50 text-xs font-medium uppercase tracking-wider mb-3 block">
           Select Product
         </label>
-        <ProductSelector selectedProduct={selectedProduct} onSelect={handleProductSelect} />
+        <ProductSelector selectedProduct={selectedProduct} onSelect={handleProductSelect} onProductsLoaded={handleProductsLoaded} />
       </motion.div>
 
       {/* Price Slider */}

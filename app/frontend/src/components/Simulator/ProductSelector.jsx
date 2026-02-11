@@ -12,7 +12,7 @@ const springTransition = { type: 'spring', stiffness: 300, damping: 30 };
  *   onSelect       - function(product), called when a product is selected
  *   apiEndpoint    - string, the API endpoint to fetch products (default: '/api/products')
  */
-export default function ProductSelector({ selectedProduct = null, onSelect, apiEndpoint = '/api/v1/products' }) {
+export default function ProductSelector({ selectedProduct = null, onSelect, onProductsLoaded, apiEndpoint = '/api/v1/products' }) {
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
   const [filtered, setFiltered] = useState([]);
@@ -32,13 +32,15 @@ export default function ProductSelector({ selectedProduct = null, onSelect, apiE
         if (!res.ok) throw new Error('Failed to fetch products');
         const data = await res.json();
         if (!cancelled) {
-          setProducts(data.products || data || []);
+          const items = data.products || data || [];
+          setProducts(items);
+          onProductsLoaded?.(items);
         }
       } catch (err) {
         console.error('ProductSelector fetch error:', err);
         if (!cancelled) {
           // Fallback demo data for development
-          setProducts([
+          const fallback = [
             { id: 'SKU-001', name: 'Mako SmartRobotics Hip System', category: 'Joint Replacement', asp: 45200 },
             { id: 'SKU-002', name: 'Triathlon Knee System', category: 'Joint Replacement', asp: 12800 },
             { id: 'SKU-003', name: 'T2 Tibial Nail', category: 'Trauma & Extremities', asp: 3400 },
@@ -47,7 +49,9 @@ export default function ProductSelector({ selectedProduct = null, onSelect, apiE
             { id: 'SKU-006', name: 'System 8 Power Tools', category: 'Instruments', asp: 22100 },
             { id: 'SKU-007', name: 'ProCuity Bed System', category: 'Medical/Surgical', asp: 35600 },
             { id: 'SKU-008', name: 'Sage Turn & Position', category: 'Medical/Surgical', asp: 4200 },
-          ]);
+          ];
+          setProducts(fallback);
+          onProductsLoaded?.(fallback);
         }
       } finally {
         if (!cancelled) setLoading(false);

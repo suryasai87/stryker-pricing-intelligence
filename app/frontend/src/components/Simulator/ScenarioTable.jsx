@@ -17,16 +17,7 @@ export default function ScenarioTable({ scenarios = [], onDelete, onSelect, sele
   const [sortKey, setSortKey] = useState('name');
   const [sortAsc, setSortAsc] = useState(true);
 
-  // Default demo data
-  const data = scenarios.length > 0
-    ? scenarios
-    : [
-        { id: '1', name: 'Base Case', product: 'Mako Hip System', priceChange: 0, volumeDelta: 0, revenueDelta: 0, marginDelta: 0 },
-        { id: '2', name: 'Aggressive Growth', product: 'Mako Hip System', priceChange: -5, volumeDelta: 8.2, revenueDelta: 1250000, marginDelta: -320000 },
-        { id: '3', name: 'Premium Position', product: 'Triathlon Knee', priceChange: 10, volumeDelta: -4.1, revenueDelta: 780000, marginDelta: 950000 },
-        { id: '4', name: 'Market Defense', product: 'T2 Tibial Nail', priceChange: -3, volumeDelta: 3.5, revenueDelta: 120000, marginDelta: -45000 },
-        { id: '5', name: 'GPO Renewal', product: 'System 8 Power Tools', priceChange: -8, volumeDelta: 12.0, revenueDelta: 540000, marginDelta: -280000 },
-      ];
+  const data = scenarios;
 
   const columns = [
     { key: 'name', label: 'Scenario', align: 'left' },
